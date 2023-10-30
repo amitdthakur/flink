@@ -23,6 +23,8 @@ import mapper.KafkaUserSchema;
 import model.User;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
@@ -42,33 +44,36 @@ public class Main {
 
   private final static String INPUT_TOPIC = "input-topic";
   private final static String OUTPUT_TOPIC = "output-topic";
-  private final static String JOB_TITLE = "FlinkWindow";
+  private final static String JOB_TITLE = "Flink_Window_Job";
   private final static String BOOTSTRAP_SERVERS = "localhost:9092";
   private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
   private static final Time TUMBLING_WINDOW_TIME = Time.seconds(10);
 
   public static void main(String[] args) throws Exception {
     LOGGER.info("Starting main job ");
+    Configuration configuration = new Configuration();
+    //Set rest end point for flink UI
+    configuration.setInteger(RestOptions.PORT, 8082);
     // Set up the streaming execution environment
-    final StreamExecutionEnvironment streamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment();
+    final StreamExecutionEnvironment streamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment(
+        configuration);
     //set parallelism
     streamExecutionEnvironment.setParallelism(4);
     //getting source
     KafkaSource<User> kafkaSource = getStringKafkaSource();
     DataStream<User> dataStream = streamExecutionEnvironment.fromSource(kafkaSource,
-        WatermarkStrategy.noWatermarks(), "Source");
+        WatermarkStrategy.noWatermarks(), "KafkaSource");
     //Serialization for kafka sink
     KafkaRecordSerializationSchema<String> serializer = getStringKafkaRecordSerializationSchema();
     //getting kafka Sink
     KafkaSink<String> kafkaSink = getStringKafkaSink(serializer);
-    //Upper case of the input data
+    //Tumbling window based on the time.
     WindowedStream<User, Integer, TimeWindow> tumblingWindowedStream =
         //Key by account number
         dataStream.keyBy(User::getAccountNumber)
             //Tumbling window
             .window(TumblingProcessingTimeWindows.of(TUMBLING_WINDOW_TIME));
-    // Add the sink to so results
-    // are written to the outputTopic
+    // Add the sink to so results are written to the outputTopic
     tumblingWindowedStream.process(new ProcessWindowExample()).sinkTo(kafkaSink);
     // Execute program
     streamExecutionEnvironment.execute(JOB_TITLE);
