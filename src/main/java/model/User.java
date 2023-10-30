@@ -10,8 +10,9 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 public class User {
-    private String name;
-    private double accountNumber;
-    private double amountToWithDraw;
-    private String atmLocation;
+
+  private String name;
+  private int accountNumber;
+  private double amountToWithDraw;
+  private String atmLocation;
 }

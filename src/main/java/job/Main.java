@@ -29,8 +29,14 @@ import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.WindowedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import process.SimpleProcessFunction;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
+import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import window.ProcessWindowExample;
 
 public class Main {
 
@@ -38,37 +44,32 @@ public class Main {
   private final static String OUTPUT_TOPIC = "output-topic";
   private final static String JOB_TITLE = "FlinkWindow";
   private final static String BOOTSTRAP_SERVERS = "localhost:9092";
+  private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+  private static final Time TUMBLING_WINDOW_TIME = Time.seconds(10);
 
   public static void main(String[] args) throws Exception {
-
+    LOGGER.info("Starting main job ");
     // Set up the streaming execution environment
     final StreamExecutionEnvironment streamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment();
     //set parallelism
     streamExecutionEnvironment.setParallelism(4);
-
     //getting source
     KafkaSource<User> kafkaSource = getStringKafkaSource();
-
     DataStream<User> dataStream = streamExecutionEnvironment.fromSource(kafkaSource,
         WatermarkStrategy.noWatermarks(), "Source");
-
     //Serialization for kafka sink
     KafkaRecordSerializationSchema<String> serializer = getStringKafkaRecordSerializationSchema();
-
-    //Sink
+    //getting kafka Sink
     KafkaSink<String> kafkaSink = getStringKafkaSink(serializer);
-
     //Upper case of the input data
-    DataStream<String> counts =
-        //Key by same input
-        //dataStream.keyBy(st -> st)
-        //attaching keyed by operator
-        dataStream.process(new SimpleProcessFunction()).name("SimpleProcessFunction");
-
+    WindowedStream<User, Integer, TimeWindow> tumblingWindowedStream =
+        //Key by account number
+        dataStream.keyBy(User::getAccountNumber)
+            //Tumbling window
+            .window(TumblingProcessingTimeWindows.of(TUMBLING_WINDOW_TIME));
     // Add the sink to so results
     // are written to the outputTopic
-    counts.sinkTo(kafkaSink);
-
+    tumblingWindowedStream.process(new ProcessWindowExample()).sinkTo(kafkaSink);
     // Execute program
     streamExecutionEnvironment.execute(JOB_TITLE);
   }
