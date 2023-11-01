@@ -1,12 +1,10 @@
 package process;
 
-import java.util.Locale;
 import model.User;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
-import org.apache.flink.streaming.api.functions.ProcessFunction.Context;
 import org.apache.flink.util.Collector;
 
-public class SimpleProcessFunction extends ProcessFunction<User, String> {
+public class UpperCaseProcessFunction extends ProcessFunction<User, String> {
 
 
   @Override

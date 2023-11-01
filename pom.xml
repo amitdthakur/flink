@@ -17,6 +17,7 @@
     <maven.compiler.release>11</maven.compiler.release>
     <log4j.version>2.17.1</log4j.version>
     <lombok.version>1.18.30</lombok.version>
+    <target.version>11</target.version>
   </properties>
 
   <repositories>
@@ -107,8 +108,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.11.0</version>
         <configuration>
-          <source>${target.java.version}</source>
-          <target>${target.java.version}</target>
+          <source>${target.version}</source>
+          <target>${target.version}</target>
         </configuration>
       </plugin>
 

@@ -7,7 +7,7 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ProcessWindowExample extends ProcessWindowFunction<User, String, Integer, TimeWindow> {
+public class ProcessWindowExample extends ProcessWindowFunction<User, User, Integer, TimeWindow> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ProcessWindowExample.class);
 
@@ -21,8 +21,8 @@ public class ProcessWindowExample extends ProcessWindowFunction<User, String, In
    */
   @Override
   public void process(Integer aDouble,
-      ProcessWindowFunction<User, String, Integer, TimeWindow>.Context context,
-      Iterable<User> elements, Collector<String> out) {
+      ProcessWindowFunction<User, User, Integer, TimeWindow>.Context context,
+      Iterable<User> elements, Collector<User> out) {
     double sumWithDrew = 0;
     String name = "";
     int accountNumber = 0;
@@ -33,7 +33,7 @@ public class ProcessWindowExample extends ProcessWindowFunction<User, String, In
       LOGGER.info("User:{} AccountNumber:{} Sum:{} ", user.getName(), user.getAccountNumber(),
           sumWithDrew);
     }
-    out.collect(
-        "Name:" + name + "AccountNumber: " + accountNumber + " SumWithDrew: " + sumWithDrew);
+    out.collect(User.builder().name(name).accountNumber(accountNumber).amountToWithDraw(sumWithDrew)
+        .build());
   }
 }

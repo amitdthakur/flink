@@ -2,7 +2,6 @@ package keyed;
 
 import model.User;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction.Context;
 import org.apache.flink.util.Collector;
 
 public class KeyedProcessFunctionExample extends

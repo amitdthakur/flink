@@ -1,11 +1,11 @@
-package mapper;
+package deserializer;
 
 import java.io.IOException;
 import model.User;
 import org.apache.flink.api.common.serialization.AbstractDeserializationSchema;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 
-public class KafkaUserSchema extends AbstractDeserializationSchema<User> {
+public class CustomDeserializer extends AbstractDeserializationSchema<User> {
 
   private static final long serialVersionUID = 1L;
 
