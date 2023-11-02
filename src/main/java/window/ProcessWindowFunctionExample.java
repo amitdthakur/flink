@@ -7,9 +7,9 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ProcessWindowExample extends ProcessWindowFunction<User, User, Integer, TimeWindow> {
+public class ProcessWindowFunctionExample extends ProcessWindowFunction<User, User, Integer, TimeWindow> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ProcessWindowExample.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ProcessWindowFunctionExample.class);
 
   /**
    * Evaluates the window and outputs none or several elements.

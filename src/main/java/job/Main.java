@@ -21,14 +21,14 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import serializer.CustomSerializer;
-import window.ProcessWindowExample;
+import window.ProcessWindowFunctionExample;
 
 public class Main {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
   private final static String INPUT_TOPIC = "input-topic";
   private final static String OUTPUT_TOPIC = "output-topic";
-  private final static String JOB_NAME = "Flink_Window_Job";
+  private final static String JOB_NAME = "Flink-Window-Job";
   private final static String BOOTSTRAP_SERVERS = "localhost:9092";
   private static final Time TUMBLING_WINDOW_TIME = Time.seconds(10);
 
@@ -43,7 +43,7 @@ public class Main {
     //set parallelism
     streamExecutionEnvironment.setParallelism(4);
     //getting source
-    KafkaSource<User> kafkaSource = getStringKafkaSource();
+    KafkaSource<User> kafkaSource = getKafkaSource();
     DataStream<User> dataStream = streamExecutionEnvironment.fromSource(kafkaSource,
         WatermarkStrategy.noWatermarks(), "KafkaSource");
     //getting kafka Sink
@@ -55,32 +55,40 @@ public class Main {
             //Tumbling window
             .window(TumblingProcessingTimeWindows.of(TUMBLING_WINDOW_TIME));
     // Add the sink to so results are written to the outputTopic
-    SingleOutputStreamOperator<User> tumblingWindowStream = tumblingWindowedStream.process(
-        new ProcessWindowExample());
+    SingleOutputStreamOperator<User> tumblingWindowStream =
+        tumblingWindowedStream.process(new ProcessWindowFunctionExample());
+
     tumblingWindowStream.sinkTo(kafkaSink);
     // Execute program
     streamExecutionEnvironment.execute(JOB_NAME);
   }
 
   private static KafkaSink<User> getKafkaSink() {
-    KafkaRecordSerializationSchema<User> serializer = getStringKafkaRecordSerializationSchema();
+    KafkaRecordSerializationSchema<User> kafkaRecordSerializationSchema = getKafkaRecordSerializationSchema();
     return KafkaSink.<User>builder()
+        //setting BootstrapServers
         .setBootstrapServers(BOOTSTRAP_SERVERS)
+        //setting DeliveryGuarantee
         .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
-        .setRecordSerializer(serializer)
+        //setting recordSerializationSchema
+        .setRecordSerializer(kafkaRecordSerializationSchema)
         .build();
   }
 
-  private static KafkaRecordSerializationSchema<User> getStringKafkaRecordSerializationSchema() {
+  private static KafkaRecordSerializationSchema<User> getKafkaRecordSerializationSchema() {
     //Serialization for kafka sink
     return KafkaRecordSerializationSchema.builder()
+        //Set the topic name
         .setTopic(OUTPUT_TOPIC)
+        //Setting custom Serialize
         .setValueSerializationSchema(new CustomSerializer())
         .build();
   }
 
-  private static KafkaSource<User> getStringKafkaSource() {
-    return KafkaSource.<User>builder().setBootstrapServers(BOOTSTRAP_SERVERS)
+  private static KafkaSource<User> getKafkaSource() {
+    return KafkaSource.<User>builder()
+        //setting BootstrapServers
+        .setBootstrapServers(BOOTSTRAP_SERVERS)
         //Set the topic name
         .setTopics(INPUT_TOPIC)
         //set thr group ID
